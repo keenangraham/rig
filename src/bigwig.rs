@@ -25,7 +25,7 @@ struct BigWigHeader {
 
 
 #[derive(Debug)]
-pub struct BigWig<R: Read + Seek> {
+pub struct BigWig<R> {
     path: Option<PathBuf>,
     header: Option<BigWigHeader>,
     bytes: Option<Bytes<R>>,
