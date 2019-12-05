@@ -37,7 +37,7 @@ impl BigWig<File> {
     pub fn open(mut self) -> Result<BigWig<File>, Box<dyn Error>> {
         let path = self.path.as_ref().unwrap();
         let rdr = File::open(&path)?;
-        self._set_bytes_from_reader(rdr);
+        self.set_bytes_from_reader(rdr);
         Ok(self)
     }
 
@@ -62,14 +62,14 @@ impl<R: Read + Seek> BigWig<R> {
         }
     }
 
-    fn _set_bytes_from_reader(&mut self, rdr: R) {
+    fn set_bytes_from_reader(&mut self, rdr: R) {
         let bytes = Bytes::from_reader(rdr); 
         self.bytes = Some(bytes);
     }
 
     pub fn from_reader(rdr: R) -> BigWig<R> {
         let mut bw = BigWig::new();
-        bw._set_bytes_from_reader(rdr);
+        bw.set_bytes_from_reader(rdr);
         bw
     }
 
@@ -110,6 +110,15 @@ mod tests {
         assert_eq!(bw.path.unwrap().to_str().unwrap(), "abc");
     }
 
+
+    #[test]
+    fn test_big_wig_new() {
+        let bw = BigWig::<File>::new();
+        assert!(bw.path.is_none());
+        assert!(bw.bytes.is_none());
+        assert!(bw.header.is_none());
+    }
+
     
     #[test]
     fn test_big_wig_from_path() {
@@ -129,5 +138,41 @@ mod tests {
         let mut bw = BigWig::from_reader(rdr);
         let num = bw.read_magic_number().unwrap();
         assert_eq!(num, 256);
+    }
+
+
+    #[test]
+    fn test_big_wig_set_bytes_from_reader() {
+        let mut bw = BigWig::new();
+        assert!(bw.bytes.is_none());
+        let rdr = Cursor::new(vec![2, 1, 0, 0]);
+        bw.set_bytes_from_reader(rdr);
+        assert!(bw.bytes.is_some());
+    }
+
+ 
+    #[test]   
+    fn test_big_wig_read_magic_number() {
+        let rdr = Cursor::new(vec![2, 1, 0, 0]);
+        let mut bw = BigWig::from_reader(rdr);
+        let num = bw.read_magic_number();
+        println!("{:?}", num);
+        assert_eq!(num.unwrap(), 258);
+    }
+
+
+    #[test]
+    fn test_big_wig_is_bigwig() {
+        let rdr = Cursor::new(vec![2, 1, 0, 0]);
+        let mut bw = BigWig::from_reader(rdr);
+        assert_eq!(bw.is_bigwig(), false)
+    }
+
+
+    #[test]
+    fn test_big_wig_validate_and_set_endianness() {
+        let rdr = Cursor::new(vec![2, 1, 0, 0]);
+        let mut bw = BigWig::from_reader(rdr);
+        assert_eq!(bw.validate_and_set_endianness(), false);
     }
 }
